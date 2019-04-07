@@ -1,0 +1,70 @@
+Assignment-1_Session-11
+
+Problem Statement:
+
+1. Use the below given data set
+
+Data Set.
+
+2. Perform the below given activities:
+
+a. Apply PCA to the dataset and show proportion of variance.
+b. Perform PCA using SVD approach.
+c. Show the graphs of PCA components.
+
+Answer-
+
+# Import Zip File
+getwd()
+setwd("E:\\Data Analytics with RET\\Assignment\\Assignment 21")
+data <- read.csv(unzip("epi_r.csv.zip", list = T)$Name[1])
+
+View(data)
+dim(data)
+str(data)
+
+# check for NA
+sum(is.na(data))
+sort(sapply(data, function(x) sum(is.na(x))))
+
+# impute missing values
+library(mice)
+imputed = mice(data[,c("calories", "sodium", "protein", "fat")], method='cart', m=5)
+imputed <- complete(imputed)
+
+# replacing NAs with imputed values
+dat <- data
+dat$calories <- imputed$calories
+dat$protein <- imputed$protein
+dat$sodium <- imputed$sodium
+dat$fat <- imputed$fat
+sum(is.na(dat))
+
+# checking for outliers
+library(ggplot2)
+ggplot(reshape2::melt(dat[,c("calories", "sodium", "protein", "fat")]), 
+      aes(x= variable, value, fill = variable))+
+ geom_boxplot()+facet_wrap(~variable, scales = 'free_y')
+# yes there are outliers
+
+# removing these outliers
+df <- outliers::rm.outlier(dat[,c("calories", "sodium", "protein", "fat")], fill = TRUE)
+View(df)
+dat$calories <- df$calories
+dat$protein <- df$protein
+dat$sodium <- df$sodium
+dat$fat <- df$fat
+
+# to remove zero variance columns from the dataset, setting variance not equal to zero.
+df<- df[ , apply(df, 2, var) != 0]
+# principal component analysis
+prin_comp <- prcomp(dat[,-1], scale. = T)
+names(prin_comp)
+
+prin_comp$rotation[1:5,1:4]
+
+# plot the resultant principal components
+biplot(prin_comp, scale = 0)
+
+#compute standard deviation of each principal component
+std_dev <- prin_comp$sdev
